@@ -3,16 +3,19 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
-import { getStoredAuth, clearStoredAuth } from './utils/api';
+import { getStoredAuth, setStoredAuth, clearStoredAuth, logoutApi } from './utils/api';
 
 function App() {
   const [currentView, setCurrentView] = useState('home');
   const [currentUser, setCurrentUser] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
 
   useEffect(() => {
     const auth = getStoredAuth();
     if (auth.user && auth.token) {
       setCurrentUser(auth.user);
+      setAuthToken(auth.token);
+      setCurrentView('dashboard');
     }
   }, []);
 
@@ -21,42 +24,47 @@ function App() {
   };
 
   const handleAuthSuccess = (user, token) => {
+    setStoredAuth(user, token);
     setCurrentUser(user);
+    setAuthToken(token);
     setCurrentView('dashboard');
   };
 
-  const handleLogout = () => {
-    clearStoredAuth();
-    setCurrentUser(null);
-    setCurrentView('home');
+  const handleLogout = async () => {
+    try {
+      await logoutApi();
+    } catch (e) {
+      // silently ignore network errors during logout
+    } finally {
+      clearStoredAuth();
+      setCurrentUser(null);
+      setAuthToken(null);
+      setCurrentView('home');
+    }
   };
 
   return (
     <div>
       {currentView === 'home' && (
-        currentUser ? (
-          <DashboardPage user={currentUser} onLogout={handleLogout} />
-        ) : (
-          <LandingPage onNavigate={handleNavigate} />
-        )
+        <LandingPage onNavigate={handleNavigate} />
       )}
 
       {currentView === 'login' && (
-        <LoginPage 
-          onNavigate={handleNavigate} 
-          onLoginSuccess={handleAuthSuccess} 
+        <LoginPage
+          onNavigate={handleNavigate}
+          onLoginSuccess={handleAuthSuccess}
         />
       )}
 
       {currentView === 'register' && (
-        <RegisterPage 
-          onNavigate={handleNavigate} 
-          onRegisterSuccess={handleAuthSuccess} 
+        <RegisterPage
+          onNavigate={handleNavigate}
+          onRegisterSuccess={handleAuthSuccess}
         />
       )}
 
       {currentView === 'dashboard' && (
-        <DashboardPage user={currentUser} onLogout={handleLogout} />
+        <DashboardPage user={currentUser} token={authToken} onLogout={handleLogout} />
       )}
     </div>
   );
