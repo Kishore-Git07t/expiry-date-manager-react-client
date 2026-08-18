@@ -73,13 +73,35 @@ export async function getProductsApi(token) {
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || 'Failed to fetch products');
-  return data; // { products: [...] }
+  return data;
+}
+
+/**
+ * Search and filter products
+ */
+export async function searchProductsApi(token, params = {}) {
+  const query = new URLSearchParams();
+  if (params.q) query.append('q', params.q);
+  if (params.upcCode) query.append('upcCode', params.upcCode);
+  if (params.category && params.category !== 'All') query.append('category', params.category);
+  if (params.expiryWithin) query.append('expiryWithin', params.expiryWithin);
+  if (params.page) query.append('page', params.page);
+  if (params.limit) query.append('limit', params.limit);
+
+  const response = await fetch(`${API_BASE_URL}/products/search?${query.toString()}`, {
+    method: 'GET',
+    headers: authHeaders(token),
+    credentials: 'include',
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to search products');
+  return data;
 }
 
 /**
  * Add a new product
  * @param {string} token
- * @param {Object} productData - { name, brand, category, expiryDate, quantity, notes }
+ * @param {Object} productData - { name, upcCode, brand, category, expiryDate, quantity, notes }
  */
 export async function addProductApi(token, productData) {
   const response = await fetch(`${API_BASE_URL}/products`, {
@@ -92,7 +114,24 @@ export async function addProductApi(token, productData) {
   if (!response.ok) {
     throw new Error(data.message || (data.errors && data.errors[0]?.msg) || 'Failed to add product');
   }
-  return data; // { product: {...} }
+  return data;
+}
+
+/**
+ * Update an existing product
+ */
+export async function updateProductApi(token, productId, productData) {
+  const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    credentials: 'include',
+    body: JSON.stringify(productData),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || (data.errors && data.errors[0]?.msg) || 'Failed to update product');
+  }
+  return data;
 }
 
 /**

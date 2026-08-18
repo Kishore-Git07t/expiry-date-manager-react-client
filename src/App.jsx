@@ -3,6 +3,7 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
+import AddProductPage from './pages/AddProductPage';
 import { getStoredAuth, setStoredAuth, clearStoredAuth, logoutApi } from './utils/api';
 
 function App() {
@@ -64,7 +65,11 @@ function App() {
       )}
 
       {currentView === 'dashboard' && (
-        <DashboardPage user={currentUser} token={authToken} onLogout={handleLogout} />
+        <DashboardPage user={currentUser} token={authToken} onLogout={handleLogout} onNavigate={handleNavigate} />
+      )}
+
+      {currentView === 'addProduct' && (
+        <AddProductPage user={currentUser} token={authToken} onNavigate={handleNavigate} />
       )}
     </div>
   );

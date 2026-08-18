@@ -49,3 +49,17 @@
 ## 4. Verification & Build Results
 - **Production Build**: Ran `npm run build` — 24 modules transformed cleanly with 0 compilation errors.
 - **Task Verification**: All tasks in [`ai/tasks.md`](file:///c:/Users/Happy/expiry-date-manager/expiry-date-manager-react-client/ai/tasks.md) marked as completed `[x]`.
+
+---
+
+## 5. Add Product & Dashboard Enhancements
+- **Barcode Scanner component ([`BarcodeScanner.jsx`](file:///c:/Users/Happy/expiry-date-manager/expiry-date-manager-react-client/src/components/BarcodeScanner.jsx))**:
+  - Implemented using `html5-qrcode` to access device cameras to read UPC barcodes.
+  - Fix added to avoid double rendering in React Strict Mode which prevents scanner mounting/camera access issues.
+- **Add Product View ([`AddProductPage.jsx`](file:///c:/Users/Happy/expiry-date-manager/expiry-date-manager-react-client/src/pages/AddProductPage.jsx))**:
+  - Separate dedicated page for adding a product. Includes form fields (Name, UPC Code, Brand, Category, Expiry Date, Quantity, Notes).
+  - Integrates the barcode scanner modal to automatically populate the UPC code upon scanning.
+  - Hits the `addProductApi` method in `api.js` to insert the new product.
+- **Dashboard Updates ([`DashboardPage.jsx`](file:///c:/Users/Happy/expiry-date-manager/expiry-date-manager-react-client/src/pages/DashboardPage.jsx))**:
+  - Changed the "Add Product" CTA to route to the new `AddProductPage`.
+  - Added an inline delete confirmation within the `ProductCard` to ensure users are prompted before accidentally removing a tracked product.
