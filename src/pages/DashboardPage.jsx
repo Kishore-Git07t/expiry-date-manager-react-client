@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   searchProductsApi,
   addProductApi,
@@ -25,11 +25,11 @@ function daysUntilExpiry(dateStr) {
 }
 
 function expiryBadge(days) {
-  if (days < 0) return { label: 'Expired', cls: 'bg-red-100 text-red-700 border-red-200' };
-  if (days === 0) return { label: 'Expires Today', cls: 'bg-orange-100 text-orange-700 border-orange-200' };
-  if (days <= 7) return { label: `${days}d left`, cls: 'bg-amber-100 text-amber-700 border-amber-200' };
-  if (days <= 30) return { label: `${days}d left`, cls: 'bg-yellow-100 text-yellow-700 border-yellow-200' };
-  return { label: `${days}d left`, cls: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
+  if (days < 0) return { label: 'Expired', cls: 'bg-rose-100 text-rose-700 border-rose-200', accent: 'border-l-rose-500' };
+  if (days === 0) return { label: 'Expires Today', cls: 'bg-orange-100 text-orange-700 border-orange-200', accent: 'border-l-orange-500' };
+  if (days <= 7) return { label: `${days}d left`, cls: 'bg-amber-100 text-amber-700 border-amber-200', accent: 'border-l-amber-500' };
+  if (days <= 30) return { label: `${days}d left`, cls: 'bg-yellow-100 text-yellow-700 border-yellow-200', accent: 'border-l-yellow-400' };
+  return { label: `${days}d left`, cls: 'bg-emerald-100 text-emerald-700 border-emerald-200', accent: 'border-l-emerald-500' };
 }
 
 function formatDate(dateStr) {
@@ -47,6 +47,29 @@ const CATEGORY_ICONS = {
   Household: '🏠',
   Other: '🔖',
 };
+
+// ── Stat Card ──────────────────────────────────────────────────────────────
+
+function StatCard({ icon, label, value, gradient, delay = 0 }) {
+  return (
+    <div
+      className="stat-card-shine rounded-2xl p-5 flex items-center gap-4 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-default"
+      style={{
+        background: gradient,
+        animationDelay: `${delay}ms`,
+        animation: `fadeInUp 0.4s ease-out ${delay}ms both`,
+      }}
+    >
+      <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl shadow-inner shrink-0">
+        {icon}
+      </div>
+      <div>
+        <p className="text-white/80 text-xs font-semibold uppercase tracking-wider">{label}</p>
+        <p className="text-white text-3xl font-extrabold leading-tight mt-0.5">{value}</p>
+      </div>
+    </div>
+  );
+}
 
 // ── Product Modal (Add/Edit) ───────────────────────────────────────────────
 
@@ -98,14 +121,14 @@ function ProductModal({ onClose, onSave, loading, initialData = null }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
+      style={{ background: 'rgba(15,15,30,0.55)', backdropFilter: 'blur(8px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-[fadeInScale_0.2s_ease-out]"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-[fadeInScale_0.25s_ease-out]"
         style={{ animationFillMode: 'both' }}
       >
-        <div className="px-6 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-6 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-xl">
               {isEdit ? '✏️' : '➕'}
@@ -245,7 +268,7 @@ function ProductModal({ onClose, onSave, loading, initialData = null }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+              className="flex-1 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
             >
               Cancel
             </button>
@@ -253,7 +276,7 @@ function ProductModal({ onClose, onSave, loading, initialData = null }) {
               id="product-submit-btn"
               type="submit"
               disabled={loading}
-              className="flex-1 py-2.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-60 rounded-lg transition-colors flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary disabled:opacity-60 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
             >
               {loading ? (
                 <>
@@ -282,12 +305,13 @@ function ProductCard({ product, onEdit, onRemove, actionId }) {
 
   return (
     <div
-      className={`group bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col gap-3 ${
-        days < 0 ? 'border-red-200 bg-red-50/30' : days <= 7 ? 'border-amber-200' : 'border-slate-100'
-      }`}
+      className={`group bg-white border-l-4 border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col gap-3 hover:-translate-y-0.5 ${badge.accent}`}
+      style={{ animation: 'fadeInUp 0.3s ease-out both' }}
     >
       <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-2xl shrink-0">
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl shrink-0 ${
+          days < 0 ? 'bg-rose-100' : days <= 7 ? 'bg-amber-100' : 'bg-slate-100'
+        }`}>
           {icon}
         </div>
         <div className="flex-1 min-w-0">
@@ -299,22 +323,22 @@ function ProductCard({ product, onEdit, onRemove, actionId }) {
             <p className="text-[10px] text-slate-400 font-mono mt-1">UPC: {product.upcCode}</p>
           )}
         </div>
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badge.cls} shrink-0`}>
+        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${badge.cls} shrink-0`}>
           {badge.label}
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 mt-2">
+      <div className="grid grid-cols-3 gap-2 text-xs text-slate-600 mt-2 bg-slate-50/70 rounded-xl p-3">
         <div className="flex flex-col">
           <span className="font-semibold text-slate-400 uppercase text-[10px] mb-0.5">Category</span>
-          <span>{product.category}</span>
+          <span className="font-medium">{product.category}</span>
         </div>
         <div className="flex flex-col">
-          <span className="font-semibold text-slate-400 uppercase text-[10px] mb-0.5">Quantity</span>
-          <span>{product.quantity}</span>
+          <span className="font-semibold text-slate-400 uppercase text-[10px] mb-0.5">Qty</span>
+          <span className="font-medium">{product.quantity}</span>
         </div>
-        <div className="col-span-2 flex flex-col mt-1">
-          <span className="font-semibold text-slate-400 uppercase text-[10px] mb-0.5">Expires On</span>
+        <div className="flex flex-col">
+          <span className="font-semibold text-slate-400 uppercase text-[10px] mb-0.5">Expires</span>
           <span className="font-medium text-slate-800">{formatDate(product.expiryDate)}</span>
         </div>
       </div>
@@ -343,9 +367,9 @@ function ProductCard({ product, onEdit, onRemove, actionId }) {
                 onRemove(product._id);
               }}
               disabled={isRemoving}
-              className="flex-1 flex items-center justify-center py-2 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 border border-red-600 rounded-lg transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center py-2 text-xs font-semibold text-white bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 rounded-lg transition-all disabled:opacity-50 shadow-sm"
             >
-              {isRemoving ? 'Deleting...' : 'Yes, Delete'}
+              {isRemoving ? 'Deleting...' : '🗑 Yes, Delete'}
             </button>
           </div>
         </div>
@@ -354,14 +378,14 @@ function ProductCard({ product, onEdit, onRemove, actionId }) {
           <button
             onClick={() => onEdit(product)}
             disabled={!!actionId}
-            className="flex-1 flex items-center justify-center py-2 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200/60 rounded-lg transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center py-2 text-xs font-semibold text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-lg transition-all disabled:opacity-50"
           >
             ✏️ Edit
           </button>
           <button
             onClick={() => setShowConfirmDelete(true)}
             disabled={!!actionId}
-            className="flex-1 flex items-center justify-center py-2 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200/60 rounded-lg transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center py-2 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200/60 rounded-lg transition-all disabled:opacity-50"
           >
             {isRemoving ? 'Removing…' : '🗑 Remove'}
           </button>
@@ -399,6 +423,25 @@ export default function DashboardPage({ user, token, onLogout, onNavigate }) {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3000);
   };
+
+  // ── Stats derived from loaded products ────────────────────────────────
+  const stats = useMemo(() => {
+    let expiringSoon = 0;
+    let expired = 0;
+    let fresh = 0;
+    products.forEach((p) => {
+      const d = daysUntilExpiry(p.expiryDate);
+      if (d < 0) expired++;
+      else if (d <= 7) expiringSoon++;
+      else fresh++;
+    });
+    return {
+      total: pagination.totalProducts || 0,
+      expiringSoon,
+      expired,
+      fresh,
+    };
+  }, [products, pagination.totalProducts]);
 
   const fetchProducts = useCallback(async (page = 1) => {
     setLoadingProducts(true);
@@ -480,40 +523,37 @@ export default function DashboardPage({ user, token, onLogout, onNavigate }) {
     await onLogout();
   };
 
-  // Stats for current loaded view (we use total from pagination for total)
-  const total = pagination.totalProducts || 0;
-
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col">
       {toastMsg && (
-        <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg animate-[fadeInScale_0.2s_ease-out]">
+        <div className="fixed top-4 right-4 z-50 bg-dark text-white text-sm font-medium px-5 py-3.5 rounded-2xl shadow-2xl animate-[fadeInScale_0.2s_ease-out] border border-white/10">
           {toastMsg}
         </div>
       )}
 
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+      <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src="/logo.jpg" alt="ExpiryGuard Logo" className="w-9 h-9 rounded-lg object-contain shadow-xs border border-slate-200" />
-            <span className="text-xl font-extrabold text-slate-900 tracking-tight">
+            <span className="text-xl font-extrabold text-dark tracking-tight">
               Expiry<span className="text-primary">Guard</span>
             </span>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-bold text-slate-900">{user?.name || 'User'}</p>
+              <p className="text-sm font-bold text-dark">{user?.name || 'User'}</p>
               <p className="text-xs text-slate-500">{user?.email}</p>
             </div>
             <button
               id="logout-btn"
               onClick={handleLogout}
               disabled={logoutLoading}
-              className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-200/60 disabled:opacity-60 flex items-center gap-1.5"
+              className="px-4 py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-all border border-rose-200/60 disabled:opacity-60 flex items-center gap-1.5 hover:shadow-sm"
             >
               {logoutLoading ? (
-                <span className="w-3 h-3 border border-red-400/40 border-t-red-500 rounded-full animate-spin" />
+                <span className="w-3 h-3 border border-rose-400/40 border-t-rose-500 rounded-full animate-spin" />
               ) : null}
               Log Out
             </button>
@@ -523,21 +563,68 @@ export default function DashboardPage({ user, token, onLogout, onNavigate }) {
 
       {/* Main */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
-        {/* Welcome Banner */}
-        <div className="bg-gradient-to-r from-primary to-blue-600 text-white rounded-2xl px-6 py-5 mb-8 flex items-center justify-between gap-4 shadow-lg">
-          <div>
-            <h1 className="text-2xl font-extrabold">Welcome back, {user?.name?.split(' ')[0] || 'User'}! 👋</h1>
-            <p className="text-blue-100 text-sm mt-1">
-              You have <strong className="text-white">{total}</strong> product{total !== 1 ? 's' : ''} tracked matching your criteria.
+        {/* Hero Banner */}
+        <div
+          className="relative rounded-3xl px-8 py-8 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, #6c5ce7 0%, #a29bfe 40%, #00cec9 100%)',
+          }}
+        >
+          {/* Decorative circles */}
+          <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-md" />
+          <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full blur-md" />
+
+          <div className="relative z-[1]">
+            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-1.5 text-xs font-semibold text-white/90 mb-3 border border-white/20">
+              <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+              DASHBOARD OVERVIEW
+            </div>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-white leading-tight">
+              Welcome back, {user?.name?.split(' ')[0] || 'User'}! 👋
+            </h1>
+            <p className="text-white/70 text-sm mt-2 max-w-md">
+              Track expiry dates, reduce food waste, and keep your pantry organized. You have <strong className="text-white">{stats.total}</strong> product{stats.total !== 1 ? 's' : ''} tracked.
             </p>
           </div>
           <button
             id="open-add-product-btn"
             onClick={() => onNavigate('addProduct')}
-            className="shrink-0 px-5 py-2.5 text-sm font-bold bg-white text-primary hover:bg-blue-50 rounded-xl shadow transition-all hover:scale-105 active:scale-95"
+            className="relative z-[1] shrink-0 px-6 py-3 text-sm font-bold bg-white text-primary hover:bg-primary hover:text-white rounded-xl shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-xl"
           >
-            ➕ Add Product
+            ➕ Add New Product
           </button>
+        </div>
+
+        {/* Stat Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatCard
+            icon="📦"
+            label="Total Items"
+            value={stats.total}
+            gradient="linear-gradient(135deg, #6c5ce7, #a29bfe)"
+            delay={0}
+          />
+          <StatCard
+            icon="⏰"
+            label="Expiring Soon"
+            value={stats.expiringSoon}
+            gradient="linear-gradient(135deg, #fdcb6e, #e17055)"
+            delay={80}
+          />
+          <StatCard
+            icon="🚨"
+            label="Expired"
+            value={stats.expired}
+            gradient="linear-gradient(135deg, #e84393, #fd79a8)"
+            delay={160}
+          />
+          <StatCard
+            icon="✅"
+            label="Fresh Items"
+            value={stats.fresh}
+            gradient="linear-gradient(135deg, #00cec9, #55efc4)"
+            delay={240}
+          />
         </div>
 
         {/* Search & Filters */}
@@ -549,7 +636,7 @@ export default function DashboardPage({ user, token, onLogout, onNavigate }) {
               placeholder="Search by product name or UPC code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
           </div>
           
@@ -559,7 +646,7 @@ export default function DashboardPage({ user, token, onLogout, onNavigate }) {
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               >
                 <option value="All">All Categories</option>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -571,7 +658,7 @@ export default function DashboardPage({ user, token, onLogout, onNavigate }) {
               <select
                 value={filterExpiry}
                 onChange={(e) => setFilterExpiry(e.target.value)}
-                className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               >
                 {EXPIRY_FILTERS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
               </select>
@@ -582,14 +669,14 @@ export default function DashboardPage({ user, token, onLogout, onNavigate }) {
         {/* Products Grid */}
         {loadingProducts ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+            <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
             <p className="text-slate-500 text-sm">Loading products…</p>
           </div>
         ) : fetchError ? (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
-            <p className="text-red-600 text-sm font-semibold mb-3">Failed to load products</p>
-            <p className="text-red-500 text-xs mb-4">{fetchError}</p>
-            <button onClick={() => fetchProducts(pagination.page)} className="px-4 py-2 text-xs font-bold text-primary border border-primary/40 rounded-lg hover:bg-primary/5 transition-colors">
+          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-8 text-center">
+            <p className="text-rose-600 text-sm font-semibold mb-3">Failed to load products</p>
+            <p className="text-rose-500 text-xs mb-4">{fetchError}</p>
+            <button onClick={() => fetchProducts(pagination.page)} className="px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-primary to-primary-dark rounded-xl hover:shadow-lg transition-all">
               Try Again
             </button>
           </div>
@@ -602,7 +689,7 @@ export default function DashboardPage({ user, token, onLogout, onNavigate }) {
             </p>
             <button
               onClick={() => onNavigate('addProduct')}
-              className="px-6 py-2.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark rounded-xl transition-colors shadow-md"
+              className="px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-primary to-accent rounded-xl transition-all shadow-md hover:shadow-xl hover:scale-105"
             >
               ➕ Add your first product
             </button>
@@ -628,22 +715,22 @@ export default function DashboardPage({ user, token, onLogout, onNavigate }) {
             {pagination.totalPages > 1 && (
               <div className="flex items-center justify-between bg-white px-6 py-4 rounded-2xl shadow-sm border border-slate-100">
                 <span className="text-sm text-slate-500">
-                  Showing page <strong className="text-slate-900">{pagination.page}</strong> of <strong className="text-slate-900">{pagination.totalPages}</strong>
+                  Showing page <strong className="text-dark">{pagination.page}</strong> of <strong className="text-dark">{pagination.totalPages}</strong>
                 </span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handlePageChange(pagination.page - 1)}
                     disabled={!pagination.hasPrevPage || loadingProducts}
-                    className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-50 transition-colors"
+                    className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl hover:bg-primary/5 hover:border-primary/30 hover:text-primary disabled:opacity-50 transition-all"
                   >
-                    Previous
+                    ← Previous
                   </button>
                   <button
                     onClick={() => handlePageChange(pagination.page + 1)}
                     disabled={!pagination.hasNextPage || loadingProducts}
-                    className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-50 transition-colors"
+                    className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl hover:bg-primary/5 hover:border-primary/30 hover:text-primary disabled:opacity-50 transition-all"
                   >
-                    Next
+                    Next →
                   </button>
                 </div>
               </div>

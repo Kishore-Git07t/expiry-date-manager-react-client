@@ -1,22 +1,51 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '';
+const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, '');
+
+function authHeaders(token) {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/**
+ * Universal safe request wrapper with user-friendly network error handling
+ */
+async function request(endpoint, options = {}) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+      credentials: 'include',
+    });
+  } catch (err) {
+    throw new Error('Unable to connect to the server. Please try again later.');
+  }
+
+  let data;
+  try {
+    data = await response.json();
+  } catch (e) {
+    data = {};
+  }
+
+  if (!response.ok) {
+    throw new Error(data.message || (data.errors && data.errors[0]?.msg) || 'Request failed');
+  }
+
+  return data;
+}
 
 /**
  * Register a new user
  * @param {Object} userData - { name, email, password }
  */
 export async function registerApi(userData) {
-  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+  return request('/auth/register', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
     body: JSON.stringify(userData),
   });
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || (data.errors && data.errors[0]?.msg) || 'Registration failed');
-  }
-  return data;
 }
 
 /**
@@ -24,56 +53,31 @@ export async function registerApi(userData) {
  * @param {Object} credentials - { email, password }
  */
 export async function loginApi(credentials) {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+  return request('/auth/login', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
     body: JSON.stringify(credentials),
   });
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || (data.errors && data.errors[0]?.msg) || 'Login failed');
-  }
-  return data;
 }
 
 /**
  * Logout user – clears httpOnly cookie on server
  */
 export async function logoutApi() {
-  const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+  return request('/auth/logout', {
     method: 'POST',
-    credentials: 'include',
   });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || 'Logout failed');
-  }
-  return data;
 }
 
 // ── Product API helpers ──────────────────────────────────────────────────────
-
-function authHeaders(token) {
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
 
 /**
  * Fetch all products for the current user
  */
 export async function getProductsApi(token) {
-  const response = await fetch(`${API_BASE_URL}/products`, {
+  return request('/products', {
     method: 'GET',
     headers: authHeaders(token),
-    credentials: 'include',
   });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to fetch products');
-  return data;
 }
 
 /**
@@ -88,14 +92,13 @@ export async function searchProductsApi(token, params = {}) {
   if (params.page) query.append('page', params.page);
   if (params.limit) query.append('limit', params.limit);
 
-  const response = await fetch(`${API_BASE_URL}/products/search?${query.toString()}`, {
+  const queryString = query.toString();
+  const endpoint = queryString ? `/products/search?${queryString}` : '/products/search';
+
+  return request(endpoint, {
     method: 'GET',
     headers: authHeaders(token),
-    credentials: 'include',
   });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to search products');
-  return data;
 }
 
 /**
@@ -104,48 +107,32 @@ export async function searchProductsApi(token, params = {}) {
  * @param {Object} productData - { name, upcCode, brand, category, expiryDate, quantity, notes }
  */
 export async function addProductApi(token, productData) {
-  const response = await fetch(`${API_BASE_URL}/products`, {
+  return request('/products', {
     method: 'POST',
     headers: authHeaders(token),
-    credentials: 'include',
     body: JSON.stringify(productData),
   });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || (data.errors && data.errors[0]?.msg) || 'Failed to add product');
-  }
-  return data;
 }
 
 /**
  * Update an existing product
  */
 export async function updateProductApi(token, productId, productData) {
-  const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+  return request(`/products/${productId}`, {
     method: 'PUT',
     headers: authHeaders(token),
-    credentials: 'include',
     body: JSON.stringify(productData),
   });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || (data.errors && data.errors[0]?.msg) || 'Failed to update product');
-  }
-  return data;
 }
 
 /**
  * Delete a product by ID
  */
 export async function removeProductApi(token, productId) {
-  const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+  return request(`/products/${productId}`, {
     method: 'DELETE',
     headers: authHeaders(token),
-    credentials: 'include',
   });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to remove product');
-  return data;
 }
 
 // ── LocalStorage helpers ──────────────────────────────────────────────────────
